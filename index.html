@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C919全产业链分析报告</title>
+    <style>
+        /* 基础重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 科技感配色 */
+        :root {
+            --primary: #C8161D;
+            --accent: #FF6B00;
+            --cyber-blue: #0066CC;
+            --light-bg: #FFFFFF;
+            --border: #E0E0E0;
+            --highlight: #FFF5F0;
+            --gold: #FFD700;
+        }
+
+        body {
+            background: var(--light-bg);
+            color: #333;
+            line-height: 1.8;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+          /* 订单分布专用样式 */
+        .order-distribution {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .donut-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        
+        .donut-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1rem;
+        }
+        
+        .donut {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--primary) 0% 20%,      /* 国、东、南订单 300/1500=20% */
+                var(--gold) 20% 24%,        /* 海航（金鹏） 60/1500=4% */
+                var(--cyber-blue) 24% 64%,  /* 金融租赁 600/1500=40% */
+                var(--accent) 64% 100%      /* 意向订单 540/1500=36% */
+            );
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .donut::after {
+            content: attr(data-label);
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 15%;
+            left: 15%;
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+            color: var(--primary);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            font-size: 1.2rem;
+        }
+        
+        .donut-info {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0 0.5rem;
+        }
+        
+        .donut-info p {
+            margin: 0.5rem 0;
+            line-height: 1.4;
+        }
+        
+        .donut-legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin: 1rem 0 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        /* 科技感标题 */
+        header {
+            position: relative;
+            padding: 3rem 2rem;
+            margin: 2rem 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #F8F8F8 0%, #FFFFFF 100%);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--primary);
+            overflow: hidden;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            position: relative;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* 折叠面板 */
+        .accordion {
+            background: #FFFFFF;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .accordion:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .accordion-header {
+            width: 100%;
+            padding: 1.5rem;
+            background: linear-gradient(to right, #F9F9F9, #F0F0F0);
+            border: none;
+            color: var(--primary);
+            font-size: 1.2em;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header:hover {
+            background: linear-gradient(to right, #F0F0F0, #E8E8E8);
+        }
+
+        .accordion-header::after {
+            content: "▸";
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            color: var(--cyber-blue);
+            font-weight: bold;
+        }
+
+        .accordion.active .accordion-header::after {
+            transform: rotate(90deg);
+            color: var(--accent);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        .accordion.active .accordion-content {
+            max-height: 3000px;
+            padding: 1.5rem;
+        }
+
+        /* 数据可视化 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .data-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-top: 3px solid var(--primary);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .data-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+
+        .progress-container {
+            background: #F0F0F0;
+            height: 12px;
+            border-radius: 6px;
+            margin: 1.2rem 0;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 6px;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0.3) 0%,
+                rgba(255,255,255,0) 50%,
+                rgba(255,255,255,0.3) 100%
+            );
+            animation: progressShine 2s infinite linear;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* 环形图 */
+        .donut-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 1.5rem auto;
+        }
+
+        .donut {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+              var(--primary) 0% 20%,    
+               var(--gold) 20% 24%,       
+               var(--cyber-blue) 24% 64%,  
+               var(--accent) 64% 100% 
+            );
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .donut::after {
+            content: attr(data-label);
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 15%;
+            left: 15%;
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+            color: var(--primary);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            font-size: 1.2rem;
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .order-info {
+            text-align: center;
+            margin-top: 1rem;
+            line-height: 1.6;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95em;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table th, .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: linear-gradient(to right, #F5F5F5, #EAEAEA);
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background: var(--highlight);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            header {
+                padding: 2rem 1.5rem;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .accordion-header {
+                padding: 1.2rem;
+            }
+            
+            .data-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+
+        /* 特殊元素 */
+        .highlight {
+            color: var(--primary);
+            font-weight: bold;
+            background: var(--highlight);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: rgba(0,102,204,0.1);
+            color: var(--cyber-blue);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>C919大型客机全产业链分析报告</h1>
+        <p>2025年4月版 | 中国商用大飞机C919</p>
+    </header>
+
+    <!-- 数据仪表盘 -->
+    <div class="dashboard">
+        <div class="data-card">
+            <h3>国产化进度</h3>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 60%"></div>
+            </div>
+            <ul>
+                <li>机体结构：<span class="highlight">95%</span>（中航西飞/沈飞）</li>
+                <li>机载系统：<span class="highlight">40%</span>（中航电子）</li>
+                <li>动力系统：<span class="highlight">15%</span>（CJ-1000A研发中）</li>
+            </ul>
+        </div>
+
+        <div class="data-card">
+            <h3>订单分布</h3>
+            <div class="order-distribution">
+                <div class="donut-wrapper">
+                    <div class="donut-container">
+                        <div class="donut" data-label="1500架"></div>
+                    </div>
+                    <div class="donut-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--primary)"></div>
+                            <span>国、东、南订单订单 300架 (20%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--gold)"></div>
+                            <span>海航（金鹏） 60架 (4%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--cyber-blue)"></div>
+                            <span>金融租赁 600架 (40%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--accent)"></div>
+                            <span>意向订单 540架 (36%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="data-card">
+            <h3>产能规划</h3>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 33%"></div>
+            </div>
+            <ul>
+                <li><strong>2024年</strong>：交付<span class="highlight">16架</span></li>
+                <li><strong>2025年</strong>：目标<span class="highlight">50架</span></li>
+                <li><strong>2027年</strong>：规划<span class="highlight">150架/年</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 核心产业链 -->
+    <div class="accordion">
+        <button class="accordion-header">一、核心产业链及供应商分布</button>
+        <div class="accordion-content">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>环节</th>
+                        <th>主要供应商</th>
+                        <th>国产化率</th>
+                        <th>关键技术</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>机体结构</td>
+                        <td>中航西飞(35%)、中航沈飞(25%)、洪都航空</td>
+                        <td><span class="highlight">95%</span></td>
+                        <td><span class="tech-badge">T800碳纤维</span><span class="tech-badge">金属结构</span></td>
+                    </tr>
+                    <tr>
+                        <td>航电系统</td>
+                        <td>中航电子(70%)、霍尼韦尔、罗克韦尔柯林斯</td>
+                        <td><span class="highlight">40%</span></td>
+                        <td><span class="tech-badge">北斗导航</span><span class="tech-badge">综合航电</span></td>
+                    </tr>
+                    <tr>
+                        <td>动力系统</td>
+                        <td>CFM国际(LEAP-1C)、航发动力(CJ-1000A)</td>
+                        <td><span class="highlight">0%</span></td>
+                        <td><span class="tech-badge">叶片涂层</span><span class="tech-badge">高温合金</span></td>
+                    </tr>
+                    <tr>
+                        <td>材料部件</td>
+                        <td>宝钛股份、中复神鹰、南山铝业</td>
+                        <td><span class="highlight">85%</span></td>
+                        <td><span class="tech-badge">铝锂合金</span><span class="tech-badge">芳纶蜂窝</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 国产化进展 -->
+    <div class="accordion">
+        <button class="accordion-header">二、国产化突破与技术进展</button>
+        <div class="accordion-content">
+            <div class="dashboard">
+                <div class="data-card">
+                    <h4>材料突破</h4>
+                    <ul>
+                        <li><span class="highlight">T800碳纤维</span>：实现量产，成本降低30%</li>
+                        <li><span class="highlight">钛合金</span>：西部超导第三代产品</li>
+                        <li><span class="highlight">铝锂合金</span>：南山铝业产品减重7%</li>
+                        <li><span class="highlight">芳纶蜂窝</span>：中航高科自主研制</li>
+                    </ul>
+                </div>
+                
+                <div class="data-card">
+                    <h4>动力系统</h4>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 15%"></div>
+                    </div>
+                    <ul>
+                        <li><span class="highlight">CJ-1000A</span>：完成高空台试验</li>
+                        <li><span class="highlight">叶片技术</span>：单晶叶片取得突破</li>
+                        <li><span class="highlight">目标</span>：2030年前装机</li>
+                    </ul>
+                </div>
+
+                <div class="data-card">
+                    <h4>机载系统</h4>
+                    <ul>
+                        <li><span class="highlight">航电系统</span>：综合航电国产化率70%</li>
+                        <li><span class="highlight">起落架</span>：北摩高科刹车系统</li>
+                        <li><span class="highlight">液压系统</span>：中航机载合资技术</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 市场分析 -->
+    <div class="accordion">
+        <button class="accordion-header">三、市场空间与产能规划</button>
+        <div class="accordion-content">
+            <div class="dashboard">
+                <div class="data-card">
+                    <h4>市场需求</h4>
+                    <ul>
+                        <li><span class="highlight">未来20年</span>：中国需窄体客机6288架</li>
+                        <li><span class="highlight">目标市占率</span>：15%（年交付200架）</li>
+                        <li><span class="highlight">国际认证</span>：EASA预计2026年完成</li>
+                    </ul>
+                </div>
+                
+                <div class="data-card">
+                    <h4>产能建设</h4>
+                    <ul>
+                        <li><span class="highlight">上海浦东</span>：主总装线</li>
+                        <li><span class="highlight">第二工厂</span>：规划建设中</li>
+                        <li><span class="highlight">临港产业园</span>：2026年配套150家</li>
+                    </ul>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>航空公司</th>
+                        <th>确认订单</th>
+                        <th>意向订单</th>
+                        <th>价值(亿美元)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>中国东航</td>
+                        <td><span class="highlight">100架</span></td>
+                        <td>50架</td>
+                        <td>162</td>
+                    </tr>
+                    <tr>
+                        <td>中国国航</td>
+                        <td><span class="highlight">100架</span></td>
+                        <td>30架</td>
+                        <td>140</td>
+                    </tr>
+                    <tr>
+                        <td>南方航空</td>
+                        <td><span class="highlight">100架</span></td>
+                        <td>40架</td>
+                        <td>151</td>
+                    </tr>
+					<tr>
+                        <td>金鹏航空</td>
+                        <td><span class="highlight">60架</span></td>
+                        <td>60架</td>
+                        <td>130</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 风险分析 -->
+    <div class="accordion">
+        <button class="accordion-header">四、风险与挑战</button>
+        <div class="accordion-content">
+            <div class="dashboard">
+                <div class="data-card">
+                    <h4>供应链风险</h4>
+                    <ul>
+                        <li><span class="highlight">发动机断供</span>：依赖LEAP-1C</li>
+                        <li><span class="highlight">芯片限制</span>：航电系统核心芯片</li>
+                        <li><span class="highlight">复材工艺</span>：与波音空客差距</li>
+                    </ul>
+                </div>
+                
+                <div class="data-card">
+                    <h4>市场风险</h4>
+                    <ul>
+                        <li><span class="highlight">FAA认证</span>：地缘政治影响</li>
+                        <li><span class="highlight">成本压力</span>：单机1.2亿美元</li>
+                        <li><span class="highlight">竞争格局</span>：波音737MAX复飞</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 产业链相关企业 -->
+    <div class="accordion">
+        <button class="accordion-header">五、产业链相关企业</button>
+        <div class="accordion-content">
+            <div class="dashboard">
+                <div class="data-card">
+                    <h4>核心企业</h4>
+                    <ul>
+                        <li><span class="highlight">机体制造</span>：中航西飞、中航沈飞</li>
+                        <li><span class="highlight">复材部件</span>：中航高科、光威复材</li>
+                        <li><span class="highlight">航电系统</span>：中航电子、中航光电</li>
+                    </ul>
+                </div>
+                
+                <div class="data-card">
+                    <h4>技术研发</h4>
+                    <ul>
+                        <li><span class="highlight">动力系统</span>：航发动力、航宇科技</li>
+                        <li><span class="highlight">材料研发</span>：宝钛股份、西部超导</li>
+                        <li><span class="highlight">关键部件</span>：北摩高科、中航重机</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>公司名称</th>
+                        <th>主营业务</th>
+                        <th>技术优势</th>
+                        <th>市场份额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>中航西飞</td>
+                        <td>机翼/中机身</td>
+                        <td><span class="tech-badge">大型构件</span><span class="tech-badge">复材应用</span></td>
+                        <td>35%</td>
+                    </tr>
+                    <tr>
+                        <td>中航电子</td>
+                        <td>综合航电系统</td>
+                        <td><span class="tech-badge">北斗导航</span><span class="tech-badge">飞控系统</span></td>
+                        <td>70%</td>
+                    </tr>
+                    <tr>
+                        <td>航发动力</td>
+                        <td>CJ-1000A发动机</td>
+                        <td><span class="tech-badge">叶片技术</span><span class="tech-badge">高温合金</span></td>
+                        <td>研发中</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+	 <!-- 产业链企业介绍 -->
+    <div class="accordion">
+        <button class="accordion-header">五、细化企业介绍</button>
+        <div class="accordion-content">
+            <div class="dashboard">
+                <div class="data-card">
+                    <h4>企业介绍</h4>
+                    <ul>
+                        <li><span class="highlight">机体制造</span>：中航西飞、中航沈飞</li>
+                        <li><span class="highlight">复材部件</span>：中航高科、光威复材</li>
+                        <li><span class="highlight">航电系统</span>：中航电子、中航光电</li>
+                    </ul>
+                </div>
+                
+                <div class="data-card">
+                    <h4>技术研发</h4>
+                    <ul>
+                        <li><span class="highlight">动力系统</span>：航发动力、航宇科技</li>
+                        <li><span class="highlight">材料研发</span>：宝钛股份、西部超导</li>
+                        <li><span class="highlight">关键部件</span>：北摩高科、中航重机</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>公司名称</th>
+                        <th>主营业务</th>
+                        <th>技术优势</th>
+                        <th>市场份额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>中航西飞</td>
+                        <td>机翼/中机身</td>
+                        <td><span class="tech-badge">大型构件</span><span class="tech-badge">复材应用</span></td>
+                        <td>35%</td>
+                    </tr>
+                    <tr>
+                        <td>中航电子</td>
+                        <td>综合航电系统</td>
+                        <td><span class="tech-badge">北斗导航</span><span class="tech-badge">飞控系统</span></td>
+                        <td>70%</td>
+                    </tr>
+                    <tr>
+                        <td>航发动力</td>
+                        <td>CJ-1000A发动机</td>
+                        <td><span class="tech-badge">叶片技术</span><span class="tech-badge">高温合金</span></td>
+                        <td>研发中</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 折叠面板交互
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const accordion = header.parentElement;
+                accordion.classList.toggle('active');
+                
+                // 关闭其他面板
+                document.querySelectorAll('.accordion').forEach(item => {
+                    if (item !== accordion) item.classList.remove('active');
+                });
+            });
+        });
+
+        // 动态进度条初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => bar.style.width = width, 100);
+            });
+        });
+    </script>
+</body>
+</html>
